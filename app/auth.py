@@ -6,8 +6,15 @@ from fastapi.security import OAuth2PasswordBearer
 from . import schemas, models, crud
 from .database import get_db
 from sqlalchemy.orm import Session
+import os 
+from dotenv import load_dotenv
 
-SECRET_KEY = "abracadabra"      
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if SECRET_KEY is None:
+    raise ValueError("SECRET_KEY is not set in the environment variables")     
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

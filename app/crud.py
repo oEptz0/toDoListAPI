@@ -55,7 +55,6 @@ def get_tasks(
     return query.offset(skip).limit(limit).all()
 
 
-
 def get_task(db: Session, task_id: int, user_id: int):
     return db.query(models.Task).filter(models.Task.id == task_id, models.Task.owner_id == user_id).first()
 
