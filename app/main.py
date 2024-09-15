@@ -2,15 +2,51 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
-from datetime import timedelta
-from . import crud, models, schemas, auth
+from datetime import timedelta, datetime
+from . import crud, schemas, auth, models
 from .database import get_db, init_db
 from .auth import get_current_user
+from app.email_utils import send_email
+from contextlib import asynccontextmanager
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
+def check_reminders():
+    with next(get_db()) as db:
+        tasks = db.query(models.Task).filter(
+            models.Task.reminder_time <= datetime.now(),
+            models.Task.reminder_sent == False,
+            models.Task.completed == False
+        ).all()
 
+        for task in tasks:
+            try:
+                send_email(
+                    to_email=task.owner.email,
+                    subject=f"Reminder: {task.title}",
+                    content=f"This is a reminder for your task: {task.title}. Deadline: {task.deadline}"
+                )
+                task.reminder_sent = True
+            except Exception as e:
+                print(f"Error sending email for task {task.id}: {e}")
+        
+        db.commit()
+
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+
+    scheduler.add_job(
+        check_reminders,
+        trigger=IntervalTrigger(seconds=60)
+    )
+
     yield
+
+    scheduler.shutdown()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -62,6 +98,7 @@ def read_tasks(
     completed: bool | None = Query(None),
     category_id: int | None = Query(None),
     search: str | None = Query(None),
+    has_reminder: bool | None = Query(None),
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user)
 ):
@@ -72,7 +109,8 @@ def read_tasks(
         limit=limit,
         completed=completed,
         category_id=category_id,
-        search=search
+        search=search,
+        has_reminder=has_reminder
     )
 
 @app.get("/tasks/{task_id}", response_model=schemas.Task)
@@ -142,3 +180,16 @@ def delete_category(
     if db_category is None:
         raise HTTPException(status_code=404, detail="Category not found")
     return crud.delete_category(db=db, user_id=current_user.id, category_id=category_id)
+      
+@app.put("/tasks/{task_id}/set_reminder", response_model=schemas.Task)
+def set_reminder(task_id: int, reminder: schemas.ReminderTime, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    task = db.query(schemas.Task).filter(schemas.Task.id == task_id, schemas.Task.owner_id == current_user.id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    task.reminder_time = reminder.reminder_time
+    task.reminder_sent = False
+    db.commit()
+    db.refresh(task)
+    
+    return task

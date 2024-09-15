@@ -37,8 +37,12 @@ class TaskBase(BaseModel):
     deadline: datetime | None = None
     category_id: int | None = None  
 
-class TaskCreate(TaskBase):
-    pass
+class TaskCreate(BaseModel):
+    title: str
+    description: str | None = None
+    completed: bool = False
+    deadline: datetime | None = None
+    category_id: int | None = None
 
 class TaskUpdate(BaseModel):
     title: str | None = None
@@ -46,11 +50,15 @@ class TaskUpdate(BaseModel):
     completed: bool | None = None
     deadline: datetime | None = None
     category_id: int | None = None
-
 class Task(TaskBase):
     id: int
     owner_id: int
     category: Category | None = None  
+    reminder_time: datetime | None = None  
+    reminder_sent: bool = False
 
     class Config:
         from_attributes = True
+
+class ReminderTime(BaseModel):
+    reminder_time: datetime

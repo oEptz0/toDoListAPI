@@ -29,7 +29,9 @@ def create_task(db: Session, task: schemas.TaskCreate, user_id: int):
         completed=task.completed,
         deadline=task.deadline,
         owner_id=user_id,
-        category_id=task.category_id
+        category_id=task.category_id,
+        reminder_time=None,
+        reminder_sent=False
     )
     db.add(db_task)
     db.commit()
@@ -43,7 +45,8 @@ def get_tasks(
     limit: int = 10,
     completed: bool | None = None,
     category_id: int | None = None,
-    search: str | None = None
+    search: str | None = None,
+    has_reminder: bool | None = None
 ):
     query = db.query(models.Task).filter(models.Task.owner_id == user_id)
     if completed is not None:
@@ -52,6 +55,10 @@ def get_tasks(
         query = query.filter(models.Task.category_id == category_id)
     if search:
         query = query.filter(models.Task.title.ilike(f"%{search}%"))
+    
+    if has_reminder is not None:
+        query = query.filter(models.Task.reminder_time != None)
+    
     return query.offset(skip).limit(limit).all()
 
 

@@ -6,3 +6,4 @@ passlib[bcrypt]
 email-validator
 python-multipart
 python-dotenv
+apscheduler
