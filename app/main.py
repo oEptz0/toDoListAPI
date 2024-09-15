@@ -183,7 +183,7 @@ def delete_category(
       
 @app.put("/tasks/{task_id}/set_reminder", response_model=schemas.Task)
 def set_reminder(task_id: int, reminder: schemas.ReminderTime, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    task = db.query(schemas.Task).filter(schemas.Task.id == task_id, schemas.Task.owner_id == current_user.id).first()
+    task = db.query(models.Task).filter(models.Task.id == task_id, models.Task.owner_id == current_user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     

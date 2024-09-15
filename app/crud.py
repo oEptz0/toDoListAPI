@@ -55,9 +55,11 @@ def get_tasks(
         query = query.filter(models.Task.category_id == category_id)
     if search:
         query = query.filter(models.Task.title.ilike(f"%{search}%"))
-    
-    if has_reminder is not None:
-        query = query.filter(models.Task.reminder_time != None)
+        
+    if has_reminder is True:
+        query = query.filter(models.Task.reminder_time != None)  
+    elif has_reminder is False:
+        query = query.filter(models.Task.reminder_time == None)
     
     return query.offset(skip).limit(limit).all()
 

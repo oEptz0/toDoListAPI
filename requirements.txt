@@ -7,3 +7,4 @@ email-validator
 python-multipart
 python-dotenv
 apscheduler
+pytest
