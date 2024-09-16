@@ -12,25 +12,26 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 def check_reminders():
-    with next(get_db()) as db:
-        tasks = db.query(models.Task).filter(
-            models.Task.reminder_time <= datetime.now(),
-            models.Task.reminder_sent == False,
-            models.Task.completed == False
-        ).all()
+    db = next(get_db())  
+    tasks = db.query(models.Task).filter(
+        models.Task.reminder_time <= datetime.now(),
+        models.Task.reminder_sent == False,
+        models.Task.completed == False
+    ).all()
 
-        for task in tasks:
-            try:
-                send_email(
-                    to_email=task.owner.email,
-                    subject=f"Reminder: {task.title}",
-                    content=f"This is a reminder for your task: {task.title}. Deadline: {task.deadline}"
-                )
-                task.reminder_sent = True
-            except Exception as e:
-                print(f"Error sending email for task {task.id}: {e}")
-        
-        db.commit()
+    for task in tasks:
+        try:
+            send_email(
+                to_email=task.owner.email,
+                subject=f"Reminder: {task.title}",
+                content=f"This is a reminder for your task: {task.title}. Deadline: {task.deadline}"
+            )
+            task.reminder_sent = True  
+        except Exception as e:
+            print(f"Error sending email for task {task.id}: {e}")
+    
+    db.commit() 
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

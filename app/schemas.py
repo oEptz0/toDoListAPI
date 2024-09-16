@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 from typing import List
 
@@ -13,9 +13,7 @@ class User(UserBase):
     id: int
     is_active: bool
     tasks: List['Task'] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
         
 class CategoryBase(BaseModel):
     name: str
@@ -27,8 +25,7 @@ class Category(CategoryBase):
     id: int
     owner_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TaskBase(BaseModel):
     title: str
@@ -50,6 +47,7 @@ class TaskUpdate(BaseModel):
     completed: bool | None = None
     deadline: datetime | None = None
     category_id: int | None = None
+    
 class Task(TaskBase):
     id: int
     owner_id: int
@@ -57,8 +55,7 @@ class Task(TaskBase):
     reminder_time: datetime | None = None  
     reminder_sent: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReminderTime(BaseModel):
     reminder_time: datetime
